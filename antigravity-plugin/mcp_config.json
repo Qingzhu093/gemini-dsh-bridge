@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "dsh-bridge": {
+      "command": "C:\\Users\\wangy\\nodejs\\node.exe",
+      "args": [
+        "C:\\Users\\wangy\\.gemini\\config\\plugins\\gemini-dsh-bridge\\bin\\shim.cjs"
+      ],
+      "timeoutSeconds": 600
+    }
+  }
+}

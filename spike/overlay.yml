@@ -1,0 +1,5 @@
+- insert:
+    - id: gemini-dsh-bridge
+      name: 'D:\\Documents\\deepseek harness\\gemini-dsh-bridge\\dsh-plugin\\src\\index.js'
+      config:
+        maxConcurrent: 3

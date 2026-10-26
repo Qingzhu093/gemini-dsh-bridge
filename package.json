@@ -1,0 +1,19 @@
+{
+  "name": "gemini-dsh-bridge-monorepo",
+  "version": "0.2.0",
+  "private": true,
+  "description": "Bridge between Google Antigravity (Gemini) and DeepSeek Harness (DeepSeek Flash)",
+  "scripts": {
+    "test:dsh": "node --test dsh-plugin/test/*.test.js",
+    "test:shim": "node --test antigravity-plugin/test/*.test.js",
+    "test:integration": "node spike/test-shim.js",
+    "test": "node --test dsh-plugin/test/*.test.js antigravity-plugin/test/*.test.js"
+  },
+  "keywords": [
+    "deepseek",
+    "gemini",
+    "antigravity",
+    "mcp"
+  ],
+  "license": "MIT"
+}

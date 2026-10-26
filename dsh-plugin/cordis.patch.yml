@@ -1,0 +1,5 @@
+- insert:
+    - id: gemini-dsh-bridge
+      name: '.'
+      config:
+        maxConcurrent: 3

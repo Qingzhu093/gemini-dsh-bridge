@@ -1,0 +1,52 @@
+{
+  "name": "dsh-plugin-gemini-bridge",
+  "version": "0.2.0",
+  "description": "Expose DeepSeek Harness sessions to Google Antigravity (Gemini) through a local, token-guarded HTTP bridge.",
+  "type": "module",
+  "main": "./src/index.js",
+  "icon": "./icon.svg",
+  "exports": {
+    ".": "./src/index.js",
+    "./cordis.patch.yml": "./cordis.patch.yml",
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "src",
+    "cordis.patch.yml",
+    "icon.svg",
+    "README.md",
+    "LICENSE"
+  ],
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  },
+  "scripts": {
+    "test": "node --test test/*.test.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Qingzhu093/gemini-dsh-bridge.git"
+  },
+  "homepage": "https://github.com/Qingzhu093/gemini-dsh-bridge#readme",
+  "bugs": {
+    "url": "https://github.com/Qingzhu093/gemini-dsh-bridge/issues"
+  },
+  "keywords": [
+    "dsh-plugin",
+    "deepseek-harness",
+    "deepseek",
+    "antigravity",
+    "gemini",
+    "mcp",
+    "bridge",
+    "cordis"
+  ],
+  "engines": {
+    "node": ">=18.0.0",
+    "dsh": ">=0.2.0-rc.2"
+  },
+  "author": "Qingzhu093",
+  "license": "MIT"
+}

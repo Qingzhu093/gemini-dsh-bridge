@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+package-lock.json
+
+# Builds & Tarballs
+*.tgz
+dist/
+build/
+
+# Runtime & Local Cache
+.dsh/
+.gemini/
+*.log
+*.tmp
+*.tmp.*
+
+# Test outputs
+spike/work/*.json
+spike/work/*.txt
+!spike/work/.gitkeep
+
+# System files
+.DS_Store
+Thumbs.db
