@@ -1,4 +1,4 @@
-# Gemini × DeepSeek Flash Bridge
+# Gemini × DeepSeek Flash Bridge (v0.3.0)
 
 <p align="center">
   <img src="assets/icon.svg" width="128" height="128" alt="Gemini × DeepSeek Flash Bridge Icon" />
@@ -7,47 +7,99 @@
 <p align="center">
   <a href="#-中文使用说明"><img src="https://img.shields.io/badge/tests-17%20passing-brightgreen.svg" alt="Tests" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
+  <a href="https://www.npmjs.com/package/dsh-plugin-gemini-bridge"><img src="https://img.shields.io/npm/v/dsh-plugin-gemini-bridge.svg?color=cb3837" alt="npm version" /></a>
   <img src="https://img.shields.io/badge/Antigravity-2.26+-orange.svg" alt="Antigravity" />
   <img src="https://img.shields.io/badge/DSH-Desktop%200.2+-purple.svg" alt="DeepSeek Harness" />
 </p>
 
-Two lightweight plugins that allow **Gemini (Google Antigravity)** to orchestrate and delegate execution workloads to **DeepSeek Flash (running inside DeepSeek Harness)** — while allowing you to **watch every action live in the DSH desktop window**, just like normal human interaction.
+连接 **Google Antigravity (Gemini)** 与 **DeepSeek Harness (DeepSeek Flash)** 的双向协同桥梁。让 Gemini 4 发挥大模型主脑（Architect / Tech Lead）的顶层思考与内容创作优势，指挥 DSH 进行高强度工程落地与编译排版；同时任务在 **DSH 桌面窗口中实时渲染、全程可见、支持用户随时干预**。
 
 [中文文档 (README.md)](#-中文使用说明) | [English Documentation (README_EN.md)](README_EN.md)
 
 ---
 
-## 架构与核心原理 (Architecture)
+## 🌟 v0.3.0 核心演进：破解长任务三大痛点
+
+经过在多模态出图、学术论文撰写、通识作业多维评测等长任务真实场景审计，v0.3.0 带来架构级突破：
+
+### 1. 双脑黄金分工矩阵 (Work Division Matrix)
+拒绝 Gemini“甩手掌柜”或把事情一股脑抛给 DSH 大包大揽：
+- **Gemini 4（大模型主脑 / 架构师）**：自主承担顶层逻辑解构、方案权衡；亲自主笔论文核心论点推导、哲学论辩与关键提示词；给出清晰明确的调研方向与技术假设。
+- **DeepSeek Flash / DSH（执行引擎 / 资深工程师）**：专攻深水区代码重构、批量改写、LaTeX 编译排版（消除 Overfull、对齐 BibTeX、调整浮动体与页边距）、定点代码库深潜检索。
+
+> **典型长任务范式（学术论文）**：Gemini 亲自主笔在上下文中打磨修改 LaTeX 核心学术文本，交由 DSH 专注于排版微调与自动化编译闭环，各展所长。
+
+### 2. 异步解耦：“一边等待，一边做事” (Overlap Execution)
+破除“调用 start 之后必须连续阻塞死等”的旧思维：
+- 参考 **Antigravity Subagent / Task 机制** 与 **DSH 智能体团队 (Teamwork) 并发哲学**：DSH 会话在本地作为后台独立进程运行。
+- **流水线并发范式**：Gemini 启动 DSH 后，**无需在原地阻塞死等**，可立即利用自身算力并发推进下一阶段工作（如起草后续章节草稿、构思反例、准备验收用例）；阶段完成后再通过非阻塞的 `dsh_status` 回查进展，实现双线并行。
+
+### 3. 科学调度 DSH 智能体团队 (Teamwork)
+- **单兵执行模式（常规明确任务首选）**：针对排版调优、特定模块修复、明确文件的检索，单会话推进，响应迅速且大幅节约 token 额度。
+- **智能体团队模式（大型复杂工程选用）**：针对跨多个子系统的全栈脚手架重构、异构系统迁移，按需允许启用 DSH 团队协同，发挥多兵种优势。
+
+---
+
+## 🏛️ 系统架构 (Architecture)
 
 ```
-Antigravity (Gemini 3.8 Flash / 4)            DeepSeek Harness (DeepSeek Flash)
-  ├─ Skill: dsh-delegate                        ├─ Cordis Plugin: gemini-dsh-bridge
-  ├─ Agent: dsh-worker                          │    ctx.workspaceRegistry.create → 独立工作区
-  └─ MCP Tools: dsh_*                           │    ctx.sessionController.create → 原生可见会话
-        │                                       │    ctx.sessionController.prompt → 派发任务
-        │                                       │    ctx.sessionQuery → 提取变更文件与 Token
-        │                                       │    sessions.json → 跨重启持久化存储
-        └──────── MCP stdio (bin/shim.cjs) ─────┘
-                    HTTP 127.0.0.1:<port> (Token Protected)
+Antigravity (Gemini 4 / 3.8 Flash)              DeepSeek Harness (DeepSeek Flash)
+  ├─ 规则规范: rules/AGENTS.md                     ├─ Cordis 插件: dsh-plugin-gemini-bridge
+  ├─ 技能指引: skills/dsh-delegate                 │    ctx.workspaceRegistry.create → 独立工作区
+  ├─ 调度代理: agents/dsh-worker                   │    ctx.sessionController.create → 原生可见会话
+  └─ MCP 工具: dsh_*                               │    ctx.sessionController.prompt → 派发任务
+        │                                          │    ctx.sessionQuery → 提取变更文件与 Token
+        │                                          │    sessions.json → 跨重启持久化存储
+        └──────────── MCP stdio (bin/shim.cjs) ────┘
+                        HTTP 127.0.0.1:<port> (Token Protected)
 ```
 
-### 为什么采用 DSH 进程内插件？
-Antigravity 只能获取其自身 MCP 客户端收到的文本结果。如果使用无头命令行子进程（headless process），该会话对桌面端用户是**完全不可见**的。
-通过在 DSH 进程内部挂载桥接插件：
-1. **桌面 UI 全程可见**：任务通过 DSH 原生的 `sessionController` 创建，会话直接出现在桌面侧边栏，生成标题并实时流式打印。
-2. **原生权限与审批弹窗**：触发敏感指令或文件写操作时，使用 DSH 原生授权窗口，用户可随时在桌面窗口中一键批准或干预。
-3. **断点恢复与会话复用**：支持 `dsh_send` 原生多轮续聊，支持重启后历史记录冷加载。
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as 用户 (随时在 DSH 桌面端围观)
+    participant G4 as Gemini 4 (主脑 / 架构师)
+    participant Bridge as Bridge (shim.cjs)
+    participant DSH as DeepSeek Flash (执行引擎)
+
+    Note over G4: 1. 深度思考方案，亲自动手编写核心内容
+    G4->>Bridge: dsh_start(cwd, prompt, title)
+    Bridge->>DSH: 启动后台异步会话
+    Bridge-->>G4: 返回 sessionId (立即解耦)
+
+    rect rgb(240, 255, 240)
+    Note over G4,DSH: 2. 一边等待，一边做事 (双线流水线并发)
+    par DSH 后台单兵执行
+        DSH->>DSH: 编译排版 / 运行长测试 / 源码定点深潜
+    and Gemini 4 前台并行推进
+        G4->>G4: 起草下一章节论文 / 撰写论辩正文 / 准备验收测试
+    end
+    end
+
+    Note over G4: 3. 阶段性非阻塞回查进度
+    G4->>Bridge: dsh_status(sessionId)
+    Bridge-->>G4: 返回最新 state 与最新文本摘要
+
+    alt DSH 任务已完成
+        G4->>Bridge: dsh_result(sessionId)
+        Bridge-->>G4: 返回完整文本、filesChanged、tokenUsage
+        Note over G4: 4. 主脑亲自核验 diff 与产物 (证据至上)
+        G4->>User: 交付高质量终稿成果
+    else DSH 仍在执行中
+        Note over G4: 5. 继续推进下一项自主任务，或按需做简短等待
+    end
+```
 
 ---
 
 ## 🛠️ 安装与快速上手 (Installation)
 
 ### 前置条件
-- 已安装并可运行 **DeepSeek Harness (DSH)** 桌面端。
-- 已安装 **Google Antigravity (AGY)**。
+- 已安装并运行 **DeepSeek Harness (DSH)** 桌面端 (>= 0.2.0-rc.2)。
+- 已安装 **Google Antigravity (AGY)** (>= 2.26.0)。
 - 本地具备 Node.js (>= 18.0.0)。
 
-### 一键安装脚本
+### 方式一：本地一键安装脚本 (推荐开发者)
 在仓库根目录打开 PowerShell 执行：
 
 ```powershell
@@ -56,93 +108,51 @@ pwsh -File scripts\install.ps1
 
 脚本将自动执行以下步骤：
 1. 将 `dsh-plugin/` 安装至 `%USERPROFILE%\.dsh\plugins\gemini-dsh-bridge`；
-2. 并在 `%USERPROFILE%\.dsh\profiles\desktop\cordis.patch.yml` 中安全注入插件声明（自动创建 `.bak-gemini-bridge` 备份）；
+2. 在 `%USERPROFILE%\.dsh\profiles\desktop\cordis.patch.yml` 中安全注入插件声明；
 3. 将 `antigravity-plugin/` 安装至 `%USERPROFILE%\.gemini\config\plugins\gemini-dsh-bridge`；
-4. 自动解析本机 Node.js 路径并写入 `mcp_config.json`，在 `%USERPROFILE%\.gemini\config\config.json` 中启用插件。
+4. 自动解析本机 Node.js 路径并写入 `mcp_config.json`，在 Antigravity 插件配置中完成启用。
 
-### 生效步骤
-1. **重启 DeepSeek Harness**（DSH 启动时将自动在 `%USERPROFILE%\.dsh\bridge\endpoint.json` 生成监听端点与临时凭证）。
-2. **重启 Antigravity**（自动拉起 MCP shim 并注册 `dsh_*` 工具）。
-3. **验证健康状态**：
+### 方式二：通过 NPM 安装 DSH 端插件
+```bash
+npm install -g dsh-plugin-gemini-bridge
+```
+
+### 验证生效
+1. **重启 DeepSeek Harness**（启动时自动在 `%USERPROFILE%\.dsh\bridge\endpoint.json` 生成监听端点与临时凭证）。
+2. **重启 Antigravity**（自动加载 MCP shim 并注册 `dsh_*` 工具）。
+3. **健康检查**：
    ```powershell
    $ep = Get-Content "$env:USERPROFILE\.dsh\bridge\endpoint.json" -Raw | ConvertFrom-Json
    curl.exe -s "$($ep.origin)/gemini-bridge/health"
    ```
    返回 `{"ok":true,"plugin":"gemini-dsh-bridge",...}` 即表示全链路就绪。
 
-### 卸载回退
-```powershell
-pwsh -File scripts\uninstall.ps1
-```
-
 ---
 
-## 📖 MCP 工具清单与接口合同 (Tool Specifications)
+## 📖 MCP 工具协议合同 (Tool Specifications)
 
-| 工具名称 | 核心参数 | 功能描述与出参要点 |
+| 工具名称 | 核心参数 | 功能描述与调用建议 |
 |---|---|---|
-| `dsh_start` | `cwd` (绝对路径), `prompt` (任务书), `title?` | 创建新工作区和会话并下发任务，立即返回 `{sessionId, workspaceId, state:"running"}` |
-| `dsh_status` | `sessionId` | 查看状态机状态 (`state`, `finished`, `live`)，返回最新 assistant 文本片段 |
-| `dsh_wait` | `sessionId`, `timeoutSeconds?` (默认 60, 最长 120) | 长轮询等待完成；当遇到 `waiting-approval` 或任务完成时立即返回，避免忙轮询 |
-| `dsh_result` | `sessionId` | 获取结构化执行结果：包含最终文本 `lastText`、修改的文件列表 `filesChanged` 及消耗的 `tokenUsage` |
-| `dsh_send` | `sessionId`, `message` | 向同一会话追问或下发后续步骤，复用上下文并保留会话历史 |
-| `dsh_cancel` | `sessionId` | 取消当前执行轮次，不破坏已有历史数据 |
-| `dsh_list` | 无 | 获取所有桥接会话（包含持久化历史与冷恢复会话） |
-
-### 会话生命周期状态 (`state`)
-- `running`：DeepSeek Flash 正在执行任务。
-- `waiting-approval`：正在等待用户在 DSH 桌面界面点击批准权限。
-- `idle`：本轮任务顺利完成。
-- `cold`：DSH 重启后从 `sessions.json` 恢复的历史会话（上下文已归档）。
-- `cancelled`：被手动取消。
+| `dsh_start` | `cwd` (绝对路径), `prompt` (任务书), `title?` | 启动 DSH 后台会话。立即返回 `sessionId`。任务进入后台独立执行，Gemini 鼓励并发开展自身工作。 |
+| `dsh_status` | `sessionId` | **非阻塞**查询会话状态（`running`/`idle`/`waiting-approval`）与最新文字尾部。并发推进时的理想查询工具。 |
+| `dsh_wait` | `sessionId`, `timeoutSeconds?` (默认 30, 最长 120) | 可选同步等待。仅在手头无其他并行任务、且必须依赖产物时使用。 |
+| `dsh_result` | `sessionId` | 获取结构化执行结果：包含最终文本 `lastText`、修改的文件列表 `filesChanged` 及消耗的 `tokenUsage`。 |
+| `dsh_send` | `sessionId`, `message` | 向同一会话追问或下发后续步骤，复用现有上下文并保留会话历史。 |
+| `dsh_cancel` | `sessionId` | 取消当前执行轮次，不破坏已有历史数据。 |
+| `dsh_list` | 无 | 获取所有桥接会话列表。 |
 
 ---
 
-## 💡 使用范例 (How to Use in Antigravity)
+## 🧪 测试套件 (Unit Tests)
 
-在 Antigravity 中与 Gemini 对话时，Gemini 会自动加载 `dsh-delegate` 技能，通过清晰的规范把执行类工作下发给 DeepSeek Flash：
+本仓库配备 17 项端到端及单元测试，覆盖 MCP 协议、握手、并发控制、断点恢复与状态机转移：
 
-> **用户提问**：“帮我把 `D:\Projects\MyApp` 里面的所有 API 接口类型重构为 TypeScript 严格模式，并跑一下单元测试。”
-
-**Gemini 的典型调度流程**：
-1. **Gemini（主管）**：梳理改动目标与验收标准，生成自包含的任务书。
-2. **调用 `dsh_start`**：下发至 DeepSeek Harness，工作区为目标工程绝对路径。
-3. **桌面通知**：提示用户：“已为您在 DeepSeek Harness 创建任务会话 `Refactor API Types`，您可在 DSH 桌面窗口中实时查看进度。”
-4. **调用 `dsh_wait`**：等待 DeepSeek Flash 执行完成。如遇权限申请，立即提示用户确认。
-5. **调用 `dsh_result`**：提取修改的文件列表（`filesChanged`）与 Token 消耗，并做最终双重质检后向用户复述关键成果。
-
----
-
-## 🧪 自动化测试 (Testing)
-
-项目配备了纯原生、零外部依赖的自动化测试套件：
-
-```bash
-# 运行全部测试（包含 DSH 插件单元测试与 MCP Shim 测试）
+```powershell
 npm test
-
-# 单独运行 DSH 插件单元测试
-npm run test:dsh
-
-# 单独运行 Shim 协议测试
-npm run test:shim
-
-# 运行真实 DSH 端到端联调测试（需本地启动 DSH）
-npm run test:integration
 ```
 
 ---
 
-## 🔒 安全保障与设计约束 (Security & Constraints)
+## 📄 开源许可 (License)
 
-1. **仅监听本机环回口 (Loopback Only)**：所有 HTTP 交互严格绑定 `127.0.0.1`，拒绝任何局域网或公网访问。
-2. **高强度随机会话令牌 (Token Guarded)**：每次 DSH 启动生成 256 位高熵令牌，仅通过本地 `0600` 权限的 `endpoint.json` 传递给同机 Antigravity 插件。
-3. **原生权限模型不变**：桥接绝不绕过 DSH 的权限机制，敏感命令与文件修改依旧在 DSH 窗口弹出原生批准对话框。
-4. **并发保护**：默认限制最大并发执行数为 3（`maxConcurrent: 3`），防止本地资源竞争与进程过载。
-5. **跨重启持久化**：会话元数据自动持久化于 `%USERPROFILE%\.dsh\bridge\sessions.json`，支持防抖原子写入与冷启动回显。
-
----
-
-## 📄 授权许可 (License)
-
-本项目基于 [MIT 许可证](LICENSE) 开源。
+本项目采用 [MIT License](LICENSE) 授权。欢迎提交 Issue 与 Pull Request！

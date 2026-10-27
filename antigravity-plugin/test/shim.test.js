@@ -69,6 +69,7 @@ test('MCP shim unit tests', async (t) => {
     assert.equal(res.jsonrpc, '2.0')
     assert.ok(res.result)
     assert.equal(res.result.serverInfo.name, 'dsh-bridge')
+    assert.equal(res.result.serverInfo.version, '0.3.0')
     assert.ok(res.result.capabilities.tools)
   })
 
@@ -100,6 +101,9 @@ test('MCP shim unit tests', async (t) => {
       assert.ok(tool.inputSchema, `tool ${tool.name} must have inputSchema`)
       assert.equal(tool.inputSchema.type, 'object')
     }
+
+    const waitTool = tools.find((t) => t.name === 'dsh_wait')
+    assert.equal(waitTool.inputSchema.properties.timeoutSeconds.default, 30)
   })
 
   await t.test('returns error for unknown tool call', async () => {

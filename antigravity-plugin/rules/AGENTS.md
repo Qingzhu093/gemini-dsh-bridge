@@ -1,8 +1,65 @@
-# Delegation to DeepSeek Flash
+# Gemini 4 × DeepSeek Harness (DSH) 协同执行准则
 
-When the user's local DeepSeek Harness bridge is available (tools `dsh_start`, `dsh_status`, `dsh_wait`, `dsh_send`, `dsh_cancel`, `dsh_result`):
+当本地 DeepSeek Harness 桥接可用时（工具 `dsh_start`、`dsh_status`、`dsh_wait`、`dsh_send`、`dsh_cancel`、`dsh_result`、`dsh_list`），Gemini 4 与 DSH 遵循以下协同机制：
 
-- Prefer delegating **mechanical** work (bulk edits, test runs, long research sweeps, scaffolding) to DeepSeek Flash instead of doing it inline. Keep design, taste, naming and final review for yourself.
-- Every delegation needs an **absolute** `cwd` and a self-contained brief; one session per coherent task; at most three sessions running at once.
-- Tell the user the **session title** so they can watch the work live in DeepSeek Harness.
-- Trust evidence, not claims: check the files, diff, or test output before reporting success.
+---
+
+## 一、双脑职责分工：发挥各自优势，杜绝一包到底
+
+用户对 DSH 的具体执行力和代码工程能力非常信任，但要求 **Gemini 4 必须发挥大模型主脑（Architect / Tech Lead）的思考与创造能力**，避免沦为被动的传话筒或将所有事情一股脑推给 DSH：
+
+| 维度 | Gemini 4（大模型主脑 / 架构师） | DeepSeek Flash / DSH（执行引擎 / 资深工程师） |
+| --- | --- | --- |
+| **任务思考与架构** | **自主思考、顶层设计**。拆解任务脉络、理清技术路线、构思大纲与核心推导。绝不在未思考前就全盘抛给 DSH。 | 接收具体目标，负责深水区工程化落地与执行。 |
+| **内容创作与文本** | **亲自动手完成核心内容**。论文的核心论点与推导、哲学伦理论辩、关键创意提示词由 Gemini 亲自动手撰写与修改。 | 负责长文档排版、工程格式转换、模版套用与工具链编译。 |
+| **调研排查** | **给出判断与明确方向**。Gemini 先分析现状，给出具体排查假设、明确的待查目录/文件/节点，再让 DSH 下潜检索。 | **定点下潜摸底**。翻阅大篇幅本地源码、测试环境接口、提取确定性证据。 |
+| **代码与排版执行** | 负责接口规范制定、伪代码或核心逻辑框架、把控最终质量。 | **主力编写与调试**。多文件代码修改、自动化脚本、LaTeX 消除 Overfull 与版面微调。 |
+
+> [!TIP]
+> **真实案例启示（来自长任务实战）**：
+>
+> - 在 LaTeX 学术论文任务中：**Gemini 亲自动手修改 LaTeX 文本内容与学术论证**，然后交由 **DSH 负责排版微调、消除 Overfull、对齐参考文献并编译 PDF**。两者各司其职，效率最高。
+> - 在作业或测评任务中：涉及学术哲学论辩的段落由 Gemini 直接撰写，涉及真实代码运行、基准测试的具体脚本由 DSH 跑。
+
+---
+
+## 二、异步解耦与并行推进：参考 Antigravity Subagent 与 DSH Teamwork 设计
+
+**过去的核心症结**：调用 `dsh_start` 后，Gemini 往往立即陷入连续调用 `dsh_wait` 的死循环中，导致在这段时间里 Gemini 的大脑完全冻结，界面像卡死一样。
+
+### 1. 充分认识 DSH 的后台异步属性
+
+- `dsh_start` 会在 DSH 桌面端创建一个独立的后台会话，并立即返回 `sessionId`。
+- **DSH 任务在后台独立运行，Gemini 绝不需要在原地死等**！
+- 参考 Antigravity 的 `invoke_subagent` 与 DSH 内部的智能体团队设计：**派发任务后，主控可以选择等待，更可以选择在这个时间窗口里去干其他事情**！
+
+### 2. 长任务中的并行推进模式 (Overlap / Pipelining)
+
+在 DSH 执行繁重任务期间（如：LaTeX 完整编译与版面调优、复杂测试套件执行、翻阅本地深层源码）：
+
+1. **不要盲目调用长阻塞的 `dsh_wait`**；
+2. **Gemini 自行决定下一步工作或是等待或是并发dsh或是利用自身算力并发推进其他工作**：
+   - 构思并起草后续章节的深度论述；
+   - 准备下一阶段需要的验收脚本或实验方案；
+   - 分析关联业务逻辑，完善核心设计；
+3. **适时回查**：Gemini 完成自己的阶段性工作后，调用一次非阻塞的 `dsh_status` 查看 DSH 是否完成；若完成则使用 `dsh_result` 读取成果；若仍在执行，可继续推进其他任务或按需短暂等待。
+
+---
+
+## 三、灵活运用 DSH 智能体团队 (Teamwork)
+
+DSH 智能体团队功能强大，无需在代码层一棍子打死，但要做到**科学调度、因地制宜**：
+
+1. **单兵模式 (Single Session - 推荐用于明确的单点任务)**：
+   - 适用场景：特定文件的排版编译、明确模块的代码重构、针对已知文件的定向排查、单一测试脚本运行。
+   - 调度策略：在派发给 DSH 的 Brief 中简要说明“本任务单会话推进即可”，避免不必要的团队分包消耗额度。
+2. **团队协作模式 (Teamwork Mode - 适用于跨模块大型工程)**：
+   - 适用场景：大型跨仓库项目重构、复杂异构系统迁移、跨多个技术栈的综合方案落地。
+   - 调度策略：允许并鼓励 DSH 启用智能体团队，发挥其团队协作威力。
+
+---
+
+## 四、关于用户反馈与核验
+
+1. 用户通常会在桌面端直接查看 DSH 的实时运行窗口，Gemini 无需做过度死板的频繁打扰，重点在于**保持自身思考与产出的连贯性**。
+2. 任务完成后，Gemini 负责对最终产物进行审查把关（检查生成的文件、diff、字数与编译状态），确保成果质量符合预期。

@@ -1,15 +1,9 @@
 {
   "name": "gemini-dsh-bridge",
   "displayName": "Gemini × DeepSeek Flash Bridge",
-  "version": "0.2.0",
-  "description": "Delegate execution work from Gemini (Antigravity) to DeepSeek Flash sessions running inside DeepSeek Harness.",
-  "author": "Qingzhu093",
-  "icon": "icon.svg",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/Qingzhu093/gemini-dsh-bridge.git"
-  },
-  "homepage": "https://github.com/Qingzhu093/gemini-dsh-bridge#readme",
+  "version": "0.3.0",
+  "description": "Orchestrate DeepSeek Flash sessions from Gemini with clear division of labor, anti-subagent quota protection, active call-me progress reporting, and overlap execution.",
+  "author": "Antigravity & DeepSeek Harness Contributors",
   "categories": [
     "Development",
     "Automation",
@@ -21,7 +15,9 @@
     "antigravity",
     "mcp",
     "delegation",
-    "bridge"
+    "bridge",
+    "anti-subagent",
+    "overlap-execution"
   ],
   "license": "MIT"
 }

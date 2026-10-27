@@ -1,6 +1,6 @@
 {
   "name": "dsh-plugin-gemini-bridge",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Expose DeepSeek Harness sessions to Google Antigravity (Gemini) through a local, token-guarded HTTP bridge.",
   "type": "module",
   "main": "./src/index.js",

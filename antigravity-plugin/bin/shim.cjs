@@ -56,13 +56,91 @@ function request(ep, method, route, body, timeoutMs) {
 }
 
 const tools = [
-  { name: 'dsh_start', description: 'Start a DeepSeek Flash session inside DeepSeek Harness and send the first task. Returns a sessionId immediately; the user can watch it live in the DSH UI.', inputSchema: { type: 'object', properties: { cwd: { type: 'string', description: 'Absolute working directory for the task.' }, prompt: { type: 'string', description: 'Self-contained task brief.' }, title: { type: 'string', description: 'Optional session title shown in the DSH sidebar.' } }, required: ['cwd', 'prompt'], additionalProperties: false } },
-  { name: 'dsh_status', description: 'Read one DSH session state plus the tail of its latest assistant text.', inputSchema: { type: 'object', properties: { sessionId: { type: 'string' } }, required: ['sessionId'], additionalProperties: false } },
-  { name: 'dsh_wait', description: 'Wait up to timeoutSeconds for a DSH session to leave the running state. Returns as soon as it finishes, needs approval, or the timeout elapses.', inputSchema: { type: 'object', properties: { sessionId: { type: 'string' }, timeoutSeconds: { type: 'number', default: 60 } }, required: ['sessionId'], additionalProperties: false } },
-  { name: 'dsh_result', description: 'Read the final assistant text, touched files, and token usage of a DSH session. finished=false means it is still working.', inputSchema: { type: 'object', properties: { sessionId: { type: 'string' } }, required: ['sessionId'], additionalProperties: false } },
-  { name: 'dsh_send', description: 'Send a follow-up message to an existing DSH session (wake it up and keep its context).', inputSchema: { type: 'object', properties: { sessionId: { type: 'string' }, message: { type: 'string' } }, required: ['sessionId', 'message'], additionalProperties: false } },
-  { name: 'dsh_cancel', description: 'Cancel the current turn of a DSH session without destroying its history.', inputSchema: { type: 'object', properties: { sessionId: { type: 'string' } }, required: ['sessionId'], additionalProperties: false } },
-  { name: 'dsh_list', description: 'List the DSH sessions this bridge knows about.', inputSchema: { type: 'object', properties: {}, additionalProperties: false } },
+  {
+    name: 'dsh_start',
+    description: 'Start a DeepSeek Flash session inside DeepSeek Harness. Returns sessionId immediately. DSH runs independently in the background, so Gemini does NOT need to wait; you can continue writing code, thinking, or using other tools in parallel.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        cwd: { type: 'string', description: 'Absolute working directory for the task.' },
+        prompt: { type: 'string', description: 'Task brief for DSH.' },
+        title: { type: 'string', description: 'Optional session title shown in the DSH sidebar.' },
+      },
+      required: ['cwd', 'prompt'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'dsh_status',
+    description: 'Non-blocking check of one DSH session state and the tail of its latest text. Ideal for checking progress while Gemini performs other tasks in parallel.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'DSH session ID.' },
+      },
+      required: ['sessionId'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'dsh_wait',
+    description: 'Wait up to timeoutSeconds for a DSH session to finish or request approval. Use only when Gemini has no other parallel work and strictly depends on the result.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'DSH session ID.' },
+        timeoutSeconds: { type: 'number', default: 30, description: 'Seconds to wait (1 to 120, default 30).' },
+      },
+      required: ['sessionId'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'dsh_result',
+    description: 'Read the final assistant text, touched files, and token usage of a DSH session. finished=false means it is still working.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'DSH session ID.' },
+      },
+      required: ['sessionId'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'dsh_send',
+    description: 'Send a follow-up message to an existing DSH session (wake it up and keep its context).',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'DSH session ID.' },
+        message: { type: 'string', description: 'Follow-up instruction or clarification.' },
+      },
+      required: ['sessionId', 'message'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'dsh_cancel',
+    description: 'Cancel the current turn of a DSH session without destroying its history.',
+    inputSchema: {
+      type: 'object',
+      properties: {
+        sessionId: { type: 'string', description: 'DSH session ID.' },
+      },
+      required: ['sessionId'],
+      additionalProperties: false,
+    },
+  },
+  {
+    name: 'dsh_list',
+    description: 'List the DSH sessions this bridge knows about.',
+    inputSchema: {
+      type: 'object',
+      properties: {},
+      additionalProperties: false,
+    },
+  },
 ];
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -80,7 +158,8 @@ async function callTool(name, args) {
       catch { return await post(ep, 'list', {}); }
     }
     case 'dsh_wait': {
-      const deadline = Date.now() + Math.min(Math.max(Number(args.timeoutSeconds ?? 60), 1), 120) * 1000;
+      const waitSec = Math.min(Math.max(Number(args.timeoutSeconds ?? 30), 1), 120);
+      const deadline = Date.now() + waitSec * 1000;
       let last = null;
       while (Date.now() < deadline) {
         last = await post(ep, 'status', { sessionId: args.sessionId });
@@ -93,7 +172,7 @@ async function callTool(name, args) {
         }
         await sleep(1500);
       }
-      return { ...last, waited: true, note: 'still running when the wait window elapsed' };
+      return { ...last, waited: true, note: `still running after ${waitSec}s wait window elapsed` };
     }
     default: throw new Error('unknown tool ' + name);
   }
@@ -122,7 +201,7 @@ async function handle(msg) {
   const { id, method, params } = msg;
   try {
     if (method === 'initialize') {
-      return result(id, { protocolVersion: PROTOCOL, capabilities: { tools: {} }, serverInfo: { name: 'dsh-bridge', version: '0.1.0' } });
+      return result(id, { protocolVersion: PROTOCOL, capabilities: { tools: {} }, serverInfo: { name: 'dsh-bridge', version: '0.3.0' } });
     }
     if (method === 'notifications/initialized' || method === 'initialized') return;
     if (method === 'ping') return result(id, {});
