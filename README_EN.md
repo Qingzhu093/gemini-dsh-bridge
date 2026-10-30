@@ -1,4 +1,4 @@
-# Gemini × DeepSeek Flash Bridge (v0.3.1)
+# Gemini × DeepSeek Flash Bridge (v0.3.2)
 
 <p align="center">
   <img src="assets/icon.svg" width="128" height="128" alt="Gemini × DeepSeek Flash Bridge Icon" />
