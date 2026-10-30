@@ -1,6 +1,6 @@
 {
   "name": "gemini-dsh-bridge-monorepo",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "private": true,
   "description": "Bridge between Google Antigravity (Gemini) and DeepSeek Harness (DeepSeek Flash)",
   "scripts": {
