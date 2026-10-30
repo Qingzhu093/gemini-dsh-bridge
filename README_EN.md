@@ -1,11 +1,11 @@
-# Gemini × DeepSeek Flash Bridge (v0.3.0)
+# Gemini × DeepSeek Flash Bridge (v0.3.1)
 
 <p align="center">
   <img src="assets/icon.svg" width="128" height="128" alt="Gemini × DeepSeek Flash Bridge Icon" />
 </p>
 
 <p align="center">
-  <a href="README.md"><img src="https://img.shields.io/badge/tests-17%20passing-brightgreen.svg" alt="Tests" /></a>
+  <a href="README.md"><img src="https://img.shields.io/badge/tests-18%20passing-brightgreen.svg" alt="Tests" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://www.npmjs.com/package/dsh-plugin-gemini-bridge"><img src="https://img.shields.io/npm/v/dsh-plugin-gemini-bridge.svg?color=cb3837" alt="npm version" /></a>
   <img src="https://img.shields.io/badge/Antigravity-2.26+-orange.svg" alt="Antigravity" />
@@ -18,11 +18,14 @@ A seamless bridge connecting **Google Antigravity (Gemini)** and **DeepSeek Harn
 
 ---
 
-## 🌟 Key Innovations in v0.3.0
+## 🌟 Key Innovations in v0.3.1
 
-Audited from real-world long-running tasks (scientific paper drafting, multi-dimensional AI benchmark evaluations, and multi-modal image generation research):
+### 1. Full Compatibility with DSH v0.2.1-rc.5 Reasoning Clean-up
+- **Automatic Signature Stripping**: Aligned with the official `reasoning-text` engine via `cleanReasoningAndSignatures`, stripping `<signature>...</signature>` metadata blocks cleanly.
+- **Streaming Leak Protection**: Intercepts unclosed signature fragments during in-flight stream generation, preventing raw payload noise from leaking to Gemini.
+- **Zero-Artifact Pure Content Delivery**: Guarantees clean reasoning and code responses in `lastText`.
 
-### 1. Work Division Matrix (Tech Lead vs Senior Engineer)
+### 2. Work Division Matrix (Tech Lead vs Senior Engineer)
 - **Gemini 4 (Architect / Tech Lead)**: Drives architectural framing, theoretical deductions, academic content drafting, and specifies clear research paths (concrete file targets & verification hypotheses).
 - **DeepSeek Flash / DSH (Execution Engine)**: Excels at heavy-lifting code refactoring, complex LaTeX typography (fixing Overfull hboxes, aligning BibTeX, tuning floating figures), and deep local repository search.
 

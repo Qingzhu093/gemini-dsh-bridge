@@ -8,6 +8,21 @@ export const inject = ['sessionController', 'webServer', 'workspaceRegistry', 's
 
 const PREFIX = '/gemini-bridge'
 
+/**
+ * Clean thinking/reasoning metadata, signature blocks, and unclosed tags,
+ * matching DeepSeek Harness v0.2.1-rc.5 reasoning-text engine specification.
+ * @param {string} rawText
+ * @returns {string}
+ */
+export function cleanReasoningAndSignatures(rawText) {
+  if (!rawText || typeof rawText !== 'string') return ''
+  // 1. Strip closed <signature>...</signature> tags and any following newlines
+  let cleaned = rawText.replace(/<signature>[\s\S]*?<\/signature>\r?\n?/g, '')
+  // 2. Stream guard: if an unclosed <signature> tag appears (in-flight streaming), drop trailing signature fragment
+  cleaned = cleaned.replace(/<signature>[\s\S]*$/g, '')
+  return cleaned
+}
+
 /** @param {any} ctx @param {any} config */
 export function apply(ctx, config = {}) {
   const cfg = {
@@ -136,7 +151,10 @@ export function apply(ctx, config = {}) {
           .filter((p) => p && p.type === 'text' && typeof p.text === 'string')
           .map((p) => p.text)
           .join('')
-        if (text) return text
+        if (text) {
+          const cleaned = cleanReasoningAndSignatures(text)
+          if (cleaned) return cleaned
+        }
       }
     } catch (e) {
       log('lastAssistantText failed', String(e))

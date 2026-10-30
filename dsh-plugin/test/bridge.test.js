@@ -3,7 +3,7 @@ import assert from 'node:assert/strict'
 import { mkdtempSync, rmSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { apply, name } from '../src/index.js'
+import { apply, name, cleanReasoningAndSignatures } from '../src/index.js'
 
 function createMockCtx() {
   const routes = new Map()
@@ -379,5 +379,20 @@ test('gemini-dsh-bridge unit tests', async (t) => {
     assert.ok(restored, 'restored session exists')
     assert.equal(restored.title, 'Awesome Session')
     assert.ok(restored.filesChanged.includes('C:\\Users\\test\\project\\output.txt'))
+  })
+
+  // 11. DSH v0.2.1-rc.5 reasoning-text signature stripping
+  await t.test('cleanReasoningAndSignatures strips signatures and protects streaming', () => {
+    // 1. Closed signature with trailing newline
+    const closed = 'Thinking process done.\n<signature>payload_hash_12345</signature>\nHere is the real answer.'
+    assert.equal(cleanReasoningAndSignatures(closed), 'Thinking process done.\nHere is the real answer.')
+
+    // 2. In-flight streaming with unclosed signature
+    const unclosed = 'Step 1 complete.<signature>partial_stream_payload'
+    assert.equal(cleanReasoningAndSignatures(unclosed), 'Step 1 complete.')
+
+    // 3. Normal text without signatures
+    const normal = 'Normal output text without any tags.'
+    assert.equal(cleanReasoningAndSignatures(normal), normal)
   })
 })

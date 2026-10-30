@@ -1,7 +1,7 @@
 {
   "name": "gemini-dsh-bridge",
   "displayName": "Gemini × DeepSeek Flash Bridge",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "description": "Orchestrate DeepSeek Flash sessions from Gemini with clear division of labor, anti-subagent quota protection, active call-me progress reporting, and overlap execution.",
   "author": "Antigravity & DeepSeek Harness Contributors",
   "categories": [

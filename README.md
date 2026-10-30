@@ -1,11 +1,11 @@
-# Gemini × DeepSeek Flash Bridge (v0.3.0)
+# Gemini × DeepSeek Flash Bridge (v0.3.1)
 
 <p align="center">
   <img src="assets/icon.svg" width="128" height="128" alt="Gemini × DeepSeek Flash Bridge Icon" />
 </p>
 
 <p align="center">
-  <a href="#-中文使用说明"><img src="https://img.shields.io/badge/tests-17%20passing-brightgreen.svg" alt="Tests" /></a>
+  <a href="#-中文使用说明"><img src="https://img.shields.io/badge/tests-18%20passing-brightgreen.svg" alt="Tests" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://www.npmjs.com/package/dsh-plugin-gemini-bridge"><img src="https://img.shields.io/npm/v/dsh-plugin-gemini-bridge.svg?color=cb3837" alt="npm version" /></a>
   <img src="https://img.shields.io/badge/Antigravity-2.26+-orange.svg" alt="Antigravity" />
@@ -18,11 +18,14 @@
 
 ---
 
-## 🌟 v0.3.0 核心演进：破解长任务三大痛点
+## 🌟 v0.3.1 核心演进：全面适配 DSH v0.2.1-rc.5 与长任务解耦
 
-经过在多模态出图、学术论文撰写、通识作业多维评测等长任务真实场景审计，v0.3.0 带来架构级突破：
+### 1. 深度适配 DSH v0.2.1-rc.5 思考链清洗机制
+- **签名/元数据块自动剥离**：引入对齐官方 `reasoning-text` 规范的 `cleanReasoningAndSignatures` 清洗管道，彻底剔除 `<signature>...</signature>` 元数据块。
+- **流式防穿帮保护**：在模型流式思考尚未闭合 `<signature>` 标签时实施边界拦截，防止未闭合的标签与乱码数据泄露至 Gemini 回传文本。
+- **纯净文本提取**：保证 Gemini 获取的 `lastText` 始终为纯净推理或代码正文，不受标签噪音干扰。
 
-### 1. 双脑黄金分工矩阵 (Work Division Matrix)
+### 2. 双脑黄金分工矩阵 (Work Division Matrix)
 拒绝 Gemini“甩手掌柜”或把事情一股脑抛给 DSH 大包大揽：
 - **Gemini 4（大模型主脑 / 架构师）**：自主承担顶层逻辑解构、方案权衡；亲自主笔论文核心论点推导、哲学论辩与关键提示词；给出清晰明确的调研方向与技术假设。
 - **DeepSeek Flash / DSH（执行引擎 / 资深工程师）**：专攻深水区代码重构、批量改写、LaTeX 编译排版（消除 Overfull、对齐 BibTeX、调整浮动体与页边距）、定点代码库深潜检索。
