@@ -14,7 +14,7 @@
 
 A high-performance bridge connecting **Google Antigravity (Gemini)** and **DeepSeek Harness (DSH)**.
 
-It empowers **Gemini 4 as the Architect / Tech Lead** (top-level system design, theoretical deduction, and core content creation), while orchestrating **DeepSeek Flash (running in DSH) for heavy-lifting code implementation, LaTeX compilation/typography, and empirical testing**. All delegated tasks run directly as **native DSH desktop sessions — streaming live in the sidebar with native permission modals for transparent human oversight**.
+It empowers **Gemini 4 as the Architect / Tech Lead** (top-level system design, theoretical deduction, and core content creation), while orchestrating **DeepSeek Flash (running in DSH) for heavy-lifting code implementation, automated testing, and multi-file refactoring**. All delegated tasks run directly as **native DSH desktop sessions — streaming live in the sidebar with native permission modals for transparent human oversight**.
 
 [中文文档 (README.md)](README.md) | [English Documentation (README_EN.md)](#-features) | [Long-Task Audit Notes](docs/LONG-TASK-AUDIT.md)
 
@@ -31,7 +31,7 @@ Traditional multi-agent systems often rely on "headless CLI subprocesses", which
 * 🖥️ **Native Desktop Visibility**: Sessions are instantiated via DSH's native `sessionController`, appearing in the desktop sidebar with automatic titles and streaming text, identical to human chats.
 * 🛡️ **Interactive Security Modals**: Sensitive file writes and shell commands trigger DSH's native permission popups, allowing one-click approval or intervention.
 * ⚡ **Overlap Execution (Do Work While Waiting)**: DSH executes asynchronously in the background. Gemini 4 never freezes in wait loops; it immediately drafts subsequent chapters or unit tests in parallel.
-* 🧠 **Specialized Division of Labor**: Gemini focuses on high-level reasoning, critique, and direction; DSH handles implementation, compilation, and typography.
+* 🧠 **Specialized Division of Labor**: Gemini focuses on high-level reasoning, system architecture, and direction; DSH handles implementation, automated tests, and multi-file code modifications.
 * 🧹 **DSH v0.2.1-rc.5 Clean-up**: Built-in reasoning cleaner automatically strips `<signature>` blocks and defends against in-flight stream leaks.
 
 ---
@@ -68,9 +68,9 @@ sequenceDiagram
     rect rgb(240, 255, 240)
     Note over G4,DSH: 2. Pipelined Concurrency (Do work while waiting)
     par DSH Desktop Execution
-        DSH->>DSH: LaTeX typography / test runner / repo inspection
+        DSH->>DSH: Multi-file refactoring / test runner / repo inspection
     and Gemini 4 Parallel Reasoning
-        G4->>G4: Draft next section / plan verification cases
+        G4->>G4: Draft next module / plan verification cases
     end
     end
 
@@ -81,7 +81,7 @@ sequenceDiagram
     alt DSH task complete
         G4->>Bridge: dsh_result(sessionId)
         Bridge-->>G4: Returns text, filesChanged, tokenUsage
-        Note over G4: 4. Architect reviews diff & compilation logs
+        Note over G4: 4. Architect reviews diff & test results
         G4->>User: Deliver verified final outcome
     else Still working
         Note over G4: 5. Continue next task or wait briefly if dependent
