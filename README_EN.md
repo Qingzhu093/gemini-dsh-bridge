@@ -1,92 +1,149 @@
-# Gemini × DeepSeek Flash Bridge (v0.3.2)
+# Gemini × DeepSeek Flash Bridge
 
 <p align="center">
   <img src="assets/icon.svg" width="128" height="128" alt="Gemini × DeepSeek Flash Bridge Icon" />
 </p>
 
 <p align="center">
-  <a href="README.md"><img src="https://img.shields.io/badge/tests-18%20passing-brightgreen.svg" alt="Tests" /></a>
+  <a href="https://github.com/Qingzhu093/gemini-dsh-bridge/actions"><img src="https://img.shields.io/badge/tests-18%20passing-brightgreen.svg" alt="Tests" /></a>
   <a href="LICENSE"><img src="https://img.shields.io/badge/License-MIT-blue.svg" alt="License: MIT" /></a>
   <a href="https://www.npmjs.com/package/dsh-plugin-gemini-bridge"><img src="https://img.shields.io/npm/v/dsh-plugin-gemini-bridge.svg?color=cb3837" alt="npm version" /></a>
   <img src="https://img.shields.io/badge/Antigravity-2.26+-orange.svg" alt="Antigravity" />
   <img src="https://img.shields.io/badge/DSH-Desktop%200.2+-purple.svg" alt="DeepSeek Harness" />
 </p>
 
-A seamless bridge connecting **Google Antigravity (Gemini)** and **DeepSeek Harness (DeepSeek Flash)**. Gemini 4 acts as the Architect / Tech Lead (deep reasoning, top-level system design, core academic/creative writing), while orchestrating DeepSeek Flash for heavy-lifting implementation and compilation — with **every turn rendered live in the DSH desktop window** for transparent human oversight.
+A high-performance bridge connecting **Google Antigravity (Gemini)** and **DeepSeek Harness (DSH)**.
 
-[中文文档 (README.md)](README.md) | [English Documentation (README_EN.md)](README_EN.md)
+It empowers **Gemini 4 as the Architect / Tech Lead** (top-level system design, theoretical deduction, and core content creation), while orchestrating **DeepSeek Flash (running in DSH) for heavy-lifting code implementation, LaTeX compilation/typography, and empirical testing**. All delegated tasks run directly as **native DSH desktop sessions — streaming live in the sidebar with native permission modals for transparent human oversight**.
+
+[中文文档 (README.md)](README.md) | [English Documentation (README_EN.md)](#-features) | [Long-Task Audit Notes](docs/LONG-TASK-AUDIT.md)
 
 ---
 
-## 🌟 Key Innovations in v0.3.1
+## 💡 Why This Bridge?
 
-### 1. Full Compatibility with DSH v0.2.1-rc.5 Reasoning Clean-up
-- **Automatic Signature Stripping**: Aligned with the official `reasoning-text` engine via `cleanReasoningAndSignatures`, stripping `<signature>...</signature>` metadata blocks cleanly.
-- **Streaming Leak Protection**: Intercepts unclosed signature fragments during in-flight stream generation, preventing raw payload noise from leaking to Gemini.
-- **Zero-Artifact Pure Content Delivery**: Guarantees clean reasoning and code responses in `lastText`.
+Traditional multi-agent systems often rely on "headless CLI subprocesses", which suffer from three critical flaws:
+1. **Black-box opacity**: Tasks run hidden in the background without UI streaming, depriving developers of situational awareness.
+2. **Security & Permission Bypass**: Headless tools cannot pop up interactive native confirmation windows for critical write operations.
+3. **Blocking Wait Loops**: Dispatchers freeze in tight polling loops, wasting compute while waiting.
 
-### 2. Work Division Matrix (Tech Lead vs Senior Engineer)
-- **Gemini 4 (Architect / Tech Lead)**: Drives architectural framing, theoretical deductions, academic content drafting, and specifies clear research paths (concrete file targets & verification hypotheses).
-- **DeepSeek Flash / DSH (Execution Engine)**: Excels at heavy-lifting code refactoring, complex LaTeX typography (fixing Overfull hboxes, aligning BibTeX, tuning floating figures), and deep local repository search.
-
-### 2. Overlap Execution: "Do Work While Waiting"
-Eliminating the anti-pattern of blocking wait loops:
-- Inspired by **Antigravity's Subagent/Task architecture** and **DSH's Teamwork concurrency philosophy**: DSH runs as an independent background session on the local host.
-- **Pipelined Concurrency**: Once Gemini dispatches a heavy task via `dsh_start`, it **does not freeze or poll in tight loops**. Gemini immediately leverages its own reasoning to draft subsequent chapters, plan verification cases, or design prompt trees in parallel, only checking back with non-blocking `dsh_status` when ready.
-
-### 3. Balanced Teamwork Orchestration
-- **Single-Session Mode**: Default for targeted tasks (typesetting, bug fixing, precise file searches), minimizing token consumption and nesting latency.
-- **Teamwork Mode**: Enabled on-demand for large-scale cross-system engineering migrations and multi-module architectures.
+**How Gemini × DSH Bridge Solves This**:
+* 🖥️ **Native Desktop Visibility**: Sessions are instantiated via DSH's native `sessionController`, appearing in the desktop sidebar with automatic titles and streaming text, identical to human chats.
+* 🛡️ **Interactive Security Modals**: Sensitive file writes and shell commands trigger DSH's native permission popups, allowing one-click approval or intervention.
+* ⚡ **Overlap Execution (Do Work While Waiting)**: DSH executes asynchronously in the background. Gemini 4 never freezes in wait loops; it immediately drafts subsequent chapters or unit tests in parallel.
+* 🧠 **Specialized Division of Labor**: Gemini focuses on high-level reasoning, critique, and direction; DSH handles implementation, compilation, and typography.
+* 🧹 **DSH v0.2.1-rc.5 Clean-up**: Built-in reasoning cleaner automatically strips `<signature>` blocks and defends against in-flight stream leaks.
 
 ---
 
 ## 🏛️ Architecture
 
 ```
-Antigravity (Gemini 4 / 3.8 Flash)              DeepSeek Harness (DeepSeek Flash)
+Google Antigravity (Gemini 4)                    DeepSeek Harness (DSH Desktop)
   ├─ Rules: rules/AGENTS.md                        ├─ Cordis Plugin: dsh-plugin-gemini-bridge
-  ├─ Skill: skills/dsh-delegate                    │    ctx.workspaceRegistry.create → Isolated Workspace
-  ├─ Agent: agents/dsh-worker                      │    ctx.sessionController.create → Native Visible Session
-  └─ MCP Tools: dsh_*                              │    ctx.sessionController.prompt → Dispatch Prompt
-        │                                          │    ctx.sessionQuery → Extract Touched Files & Tokens
-        │                                          │    sessions.json → Persistent Cold-Reboot Storage
+  ├─ Skills: skills/dsh-delegate                   │    ctx.workspaceRegistry.create → Isolated Workspace
+  ├─ Agent: agents/dsh-worker                      │    ctx.sessionController.create → Native Desktop Session
+  └─ MCP Tools: dsh_*                              │    ctx.sessionController.prompt → Dispatch Execution
+        │                                          │    ctx.sessionQuery → Extract Files & Token Usage
+        │                                          │    sessions.json → Cold Reboot Persistence
         └──────────── MCP stdio (bin/shim.cjs) ────┘
                         HTTP 127.0.0.1:<port> (Token Protected)
 ```
 
+### Pipelined Overlap Execution Flow
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor User as User (Observing DSH Desktop)
+    participant G4 as Gemini 4 (Architect)
+    participant Bridge as Bridge (shim.cjs)
+    participant DSH as DeepSeek Flash (Desktop Engine)
+
+    Note over G4: 1. Top-level architectural design & core writing
+    G4->>Bridge: dsh_start(cwd, prompt, title)
+    Bridge->>DSH: Create native desktop session & start prompt
+    Bridge-->>G4: Returns sessionId immediately (decoupled)
+
+    rect rgb(240, 255, 240)
+    Note over G4,DSH: 2. Pipelined Concurrency (Do work while waiting)
+    par DSH Desktop Execution
+        DSH->>DSH: LaTeX typography / test runner / repo inspection
+    and Gemini 4 Parallel Reasoning
+        G4->>G4: Draft next section / plan verification cases
+    end
+    end
+
+    Note over G4: 3. Non-blocking status check
+    G4->>Bridge: dsh_status(sessionId)
+    Bridge-->>G4: Returns latest state & tail snippet
+
+    alt DSH task complete
+        G4->>Bridge: dsh_result(sessionId)
+        Bridge-->>G4: Returns text, filesChanged, tokenUsage
+        Note over G4: 4. Architect reviews diff & compilation logs
+        G4->>User: Deliver verified final outcome
+    else Still working
+        Note over G4: 5. Continue next task or wait briefly if dependent
+    end
+```
+
 ---
 
-## 🛠️ Installation
+## 🚀 Quick Start (3 Steps)
 
 ### Prerequisites
-- **DeepSeek Harness (DSH)** Desktop (>= 0.2.0-rc.2).
+- **DeepSeek Harness (DSH)** Desktop (>= 0.2.0-rc.2, recommended v0.2.1-rc.5).
 - **Google Antigravity (AGY)** (>= 2.26.0).
 - Local Node.js runtime (>= 18.0.0).
 
-### Method 1: Local Setup Script (Recommended)
-Open PowerShell at the repo root and run:
+### Step 1: Install with One-Click Script
+Clone the repository and run in PowerShell:
+
 ```powershell
+git clone https://github.com/Qingzhu093/gemini-dsh-bridge.git
+cd gemini-dsh-bridge
 pwsh -File scripts\install.ps1
 ```
 
-### Method 2: NPM Package for DSH
-```bash
-npm install -g dsh-plugin-gemini-bridge
-```
+> The script automatically installs the DSH Cordis plugin (with profile backup), deploys the Antigravity plugin, and adapts your local Node executable path.
+
+### Step 2: Restart & Health Check
+1. **Restart DeepSeek Harness Desktop** (generates runtime token and loopback endpoint in `%USERPROFILE%\.dsh\bridge\endpoint.json`);
+2. **Restart Antigravity** (loads MCP shim and registers 7 `dsh_*` tools);
+3. **Verify connectivity**:
+   ```powershell
+   $ep = Get-Content "$env:USERPROFILE\.dsh\bridge\endpoint.json" -Raw | ConvertFrom-Json
+   curl.exe -s "$($ep.origin)/gemini-bridge/health"
+   ```
+   A JSON response with `{"ok":true,"plugin":"gemini-dsh-bridge",...}` confirms readiness.
+
+### Step 3: Start Collaborating
+In Antigravity chat, instruct Gemini 4 to delegate heavy execution tasks to DSH!
 
 ---
 
 ## 📖 MCP Tool Specifications
 
+The bridge exposes 7 standard MCP tools:
+
 | Tool | Parameters | Description |
 |---|---|---|
-| `dsh_start` | `cwd` (absolute), `prompt`, `title?` | Launches a background DSH session. Returns `sessionId` immediately. Gemini is encouraged to proceed with parallel work. |
-| `dsh_status` | `sessionId` | **Non-blocking** query of session state and latest tail text. Ideal for checking status between parallel tasks. |
-| `dsh_wait` | `sessionId`, `timeoutSeconds?` (default 30) | Optional synchronous wait. Use only when strictly dependent on the output with no parallel tasks available. |
-| `dsh_result` | `sessionId` | Retrieves final text, `filesChanged`, and `tokenUsage`. |
-| `dsh_send` | `sessionId`, `message` | Sends follow-up message to the existing session context. |
+| `dsh_start` | `cwd` (absolute), `prompt`, `title?` | Launches a native DSH desktop session. Returns `{sessionId, workspaceId, state:"running"}` immediately. Encourages Gemini to proceed with parallel work. |
+| `dsh_status` | `sessionId` | **Non-blocking** query of session state and latest tail text. Ideal for progress checks during concurrent work. |
+| `dsh_wait` | `sessionId`, `timeoutSeconds?` (default 30) | Optional synchronous wait. Use only when strictly dependent on output with no parallel tasks available. |
+| `dsh_result` | `sessionId` | Retrieves final text, `filesChanged`, and `tokenUsage` statistics. |
+| `dsh_send` | `sessionId`, `message` | Sends follow-up message to the existing session context without losing history. |
 | `dsh_cancel` | `sessionId` | Cancels current execution turn safely without destroying history. |
-| `dsh_list` | None | Lists all bridge sessions. |
+| `dsh_list` | None | Lists all bridge sessions (including persisted cold sessions). |
+
+---
+
+## ⚙️ Advanced Features
+
+1. **Cold Persistence**: All active and completed sessions are stored in `%USERPROFILE%\.dsh\bridge\sessions.json`. Sessions seamlessly transition to archived `cold` state across desktop restarts.
+2. **Elastic Teamwork Orchestration**: Single-session mode for targeted edits (conserving tokens); Teamwork mode enabled on-demand for full-stack multi-module refactoring.
+3. **Interactive Approval Handling**: When state becomes `waiting-approval`, the tool notifies the agent to prompt the user to click approve in the DSH desktop window.
 
 ---
 
@@ -95,7 +152,7 @@ npm install -g dsh-plugin-gemini-bridge
 ```powershell
 npm test
 ```
-All 17 integration and unit tests pass cleanly.
+All 18 unit and integration tests **100% PASS (All Green)**.
 
 ---
 
