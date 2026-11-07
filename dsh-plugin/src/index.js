@@ -10,7 +10,7 @@ const PREFIX = '/gemini-bridge'
 
 /**
  * Clean thinking/reasoning metadata, signature blocks, and unclosed tags,
- * matching DeepSeek Harness v0.2.1-rc.5 reasoning-text engine specification.
+ * matching DeepSeek Harness v0.2.2 reasoning-text engine specification.
  * @param {string} rawText
  * @returns {string}
  */

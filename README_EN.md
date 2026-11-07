@@ -32,7 +32,7 @@ Traditional multi-agent systems often rely on "headless CLI subprocesses", which
 * 🛡️ **Interactive Security Modals**: Sensitive file writes and shell commands trigger DSH's native permission popups, allowing one-click approval or intervention.
 * ⚡ **Overlap Execution (Do Work While Waiting)**: DSH executes asynchronously in the background. Gemini 4 never freezes in wait loops; it immediately drafts subsequent chapters or unit tests in parallel.
 * 🧠 **Specialized Division of Labor**: Gemini focuses on high-level reasoning, system architecture, and direction; DSH handles implementation, automated tests, and multi-file code modifications.
-* 🧹 **DSH v0.2.1-rc.5 Clean-up**: Built-in reasoning cleaner automatically strips `<signature>` blocks and defends against in-flight stream leaks.
+* 🧹 **DSH v0.2.2 Clean-up**: Built-in reasoning cleaner automatically strips `<signature>` blocks and defends against in-flight stream leaks, fully verified on DSH v0.2.2.
 
 ---
 
